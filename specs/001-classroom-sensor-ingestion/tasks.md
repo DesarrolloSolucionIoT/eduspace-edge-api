@@ -32,11 +32,11 @@ Single project, organized by bounded context under `src/` with tests under `test
 
 **Purpose**: Project initialization and tooling.
 
-- [ ] T001 Create the project directory tree per plan.md (`src/`, `src/shared/`, `src/device_auth/{domain,application,infrastructure,interfaces}/`, `src/iot_ingestion/{domain,application,infrastructure,interfaces}/`, `tests/{unit,integration,contract}/`) with `__init__.py` files
-- [ ] T002 Create `requirements.txt` pinning Flask, Peewee, python-dateutil, requests, and pytest
-- [ ] T003 [P] Configure pytest and type checking in `pyproject.toml` (test discovery under `tests/`, mypy strict-ish settings to enforce mandatory type hints)
-- [ ] T004 [P] Create `src/config.py` exposing typed settings from env: `EDUSPACE_DB_PATH`, `EDUSPACE_WEB_API_URL`, `EDUSPACE_FORWARD_TIMEOUT`, `EDUSPACE_ENV`
-- [ ] T005 [P] Create `tests/conftest.py` and `tests/integration/conftest.py` providing a temp-file SQLite fixture and a Flask test-client fixture (real DB, not in-memory)
+- [X] T001 Create the project directory tree per plan.md (`src/`, `src/shared/`, `src/device_auth/{domain,application,infrastructure,interfaces}/`, `src/iot_ingestion/{domain,application,infrastructure,interfaces}/`, `tests/{unit,integration,contract}/`) with `__init__.py` files
+- [X] T002 Create `requirements.txt` pinning Flask, Peewee, python-dateutil, requests, and pytest
+- [X] T003 [P] Configure pytest and type checking in `pyproject.toml` (test discovery under `tests/`, mypy strict-ish settings to enforce mandatory type hints)
+- [X] T004 [P] Create `src/config.py` exposing typed settings from env: `EDUSPACE_DB_PATH`, `EDUSPACE_WEB_API_URL`, `EDUSPACE_FORWARD_TIMEOUT`, `EDUSPACE_ENV`
+- [X] T005 [P] Create `tests/conftest.py` and `tests/integration/conftest.py` providing a temp-file SQLite fixture and a Flask test-client fixture (real DB, not in-memory)
 
 ---
 
@@ -48,18 +48,18 @@ mechanism (every request passes through it).
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T006 Create `src/db.py`: a Peewee `SqliteDatabase` bound to the configured **file** path plus `init_db()` that creates tables idempotently
-- [ ] T007 [P] Create `src/shared/clock.py`: an injectable UTC `Clock` protocol and a system implementation returning timezone-aware UTC `datetime`
-- [ ] T008 [P] Create `src/shared/errors.py`: domain error types and machine-readable codes (`AUTH_FAILED`, `VALIDATION_ERROR`) plus a helper that builds `{code, message}` payloads
-- [ ] T009 [P] Create `src/shared/zone_thresholds.py`: `ZoneThresholds` value object (`temp_min/max`, `humidity_min/max`, all optional) — shared kernel so neither context imports the other's domain
-- [ ] T010 [P] Create `src/shared/threshold_config.py`: `resolve_thresholds(zone_id) -> ZoneThresholds` loading per-zone bounds from configuration (empty zone → no bounds)
-- [ ] T011 [P] Create `src/device_auth/infrastructure/password_hasher.py`: salted hashing (`hash_key`) and constant-time `verify_key` — never stores/returns plaintext
-- [ ] T012 Create `src/device_auth/infrastructure/models.py`: Peewee `DeviceModel` mapping the `devices` table (`device_id` PK, `api_key_hash`, `zone_id`, `created_at`)
-- [ ] T013 [P] Create `src/device_auth/domain/device.py`: pure `Device` entity with `verify_key(presented_key, hasher)` (no Peewee/Flask imports)
-- [ ] T014 Create `src/device_auth/infrastructure/device_repository.py`: `DeviceRepository` (`get_by_id`, `add`, `exists`) mapping `DeviceModel` ↔ `Device` (depends on T012, T013)
-- [ ] T015 Create `src/device_auth/application/authenticator.py`: validate `X-API-Key` against body `device_id` via repository + hasher, resolve `ZoneThresholds` by the device's `zone_id`, and return an auth context (device + thresholds); raises a generic auth error on any failure (depends on T009, T010, T011, T014)
-- [ ] T016 Create `src/device_auth/interfaces/middleware.py`: Flask middleware that runs the authenticator on every inbound request and attaches the auth context (device + thresholds) to the request (depends on T015)
-- [ ] T017 Create `src/app.py`: Flask app factory that wires `before_request` bootstrap (`init_db()`), registers the auth middleware, and provides the blueprint/route registration seam (depends on T006, T016)
+- [X] T006 Create `src/db.py`: a Peewee `SqliteDatabase` bound to the configured **file** path plus `init_db()` that creates tables idempotently
+- [X] T007 [P] Create `src/shared/clock.py`: an injectable UTC `Clock` protocol and a system implementation returning timezone-aware UTC `datetime`
+- [X] T008 [P] Create `src/shared/errors.py`: domain error types and machine-readable codes (`AUTH_FAILED`, `VALIDATION_ERROR`) plus a helper that builds `{code, message}` payloads
+- [X] T009 [P] Create `src/shared/zone_thresholds.py`: `ZoneThresholds` value object (`temp_min/max`, `humidity_min/max`, all optional) — shared kernel so neither context imports the other's domain
+- [X] T010 [P] Create `src/shared/threshold_config.py`: `resolve_thresholds(zone_id) -> ZoneThresholds` loading per-zone bounds from configuration (empty zone → no bounds)
+- [X] T011 [P] Create `src/device_auth/infrastructure/password_hasher.py`: salted hashing (`hash_key`) and constant-time `verify_key` — never stores/returns plaintext
+- [X] T012 Create `src/device_auth/infrastructure/models.py`: Peewee `DeviceModel` mapping the `devices` table (`device_id` PK, `api_key_hash`, `zone_id`, `created_at`)
+- [X] T013 [P] Create `src/device_auth/domain/device.py`: pure `Device` entity with `verify_key(presented_key, hasher)` (no Peewee/Flask imports)
+- [X] T014 Create `src/device_auth/infrastructure/device_repository.py`: `DeviceRepository` (`get_by_id`, `add`, `exists`) mapping `DeviceModel` ↔ `Device` (depends on T012, T013)
+- [X] T015 Create `src/device_auth/application/authenticator.py`: validate `X-API-Key` against body `device_id` via repository + hasher, resolve `ZoneThresholds` by the device's `zone_id`, and return an auth context (device + thresholds); raises a generic auth error on any failure (depends on T009, T010, T011, T014)
+- [X] T016 Create `src/device_auth/interfaces/middleware.py`: Flask middleware that runs the authenticator on every inbound request and attaches the auth context (device + thresholds) to the request (depends on T015)
+- [X] T017 Create `src/app.py`: Flask app factory that wires `before_request` bootstrap (`init_db()`), registers the auth middleware, and provides the blueprint/route registration seam (depends on T006, T016)
 
 **Checkpoint**: App boots, initializes a durable SQLite file, and authenticates valid devices.
 
@@ -76,20 +76,20 @@ exceeding the zone thresholds → `201` with `alert_led_state: 1`; POST one with
 
 ### Tests for User Story 1 (write first; must fail) ⚠️
 
-- [ ] T018 [P] [US1] Unit test `alert_policy` in `tests/unit/iot_ingestion/test_alert_policy.py`: breach (upper/lower temp & humidity) → 1, within bounds → 0, no thresholds → 0, occupancy never affects result
-- [ ] T019 [P] [US1] Unit test UTC normalization in `tests/unit/iot_ingestion/test_normalize.py`: offset/zoned ISO 8601 → UTC; naive → UTC; missing `recorded_at` → injected clock UTC
-- [ ] T020 [P] [US1] Integration test happy path in `tests/integration/test_ingestion_endpoint.py` (real SQLite): valid reading → `201 {reading_id, alert_led_state, recorded_at(UTC)}` and a persisted row
+- [X] T018 [P] [US1] Unit test `alert_policy` in `tests/unit/iot_ingestion/test_alert_policy.py`: breach (upper/lower temp & humidity) → 1, within bounds → 0, no thresholds → 0, occupancy never affects result
+- [X] T019 [P] [US1] Unit test UTC normalization in `tests/unit/iot_ingestion/test_normalize.py`: offset/zoned ISO 8601 → UTC; naive → UTC; missing `recorded_at` → injected clock UTC
+- [X] T020 [P] [US1] Integration test happy path in `tests/integration/test_ingestion_endpoint.py` (real SQLite): valid reading → `201 {reading_id, alert_led_state, recorded_at(UTC)}` and a persisted row
 
 ### Implementation for User Story 1
 
-- [ ] T021 [P] [US1] Create `src/iot_ingestion/domain/sensor_reading.py`: pure `SensorReading` entity (`temperature`, `humidity`, `occupancy`, `recorded_at` UTC)
-- [ ] T022 [P] [US1] Create `src/iot_ingestion/domain/alert_policy.py`: pure `evaluate(reading, thresholds) -> int` returning 0/1 (occupancy ignored)
-- [ ] T023 [P] [US1] Create `src/iot_ingestion/application/normalize.py`: `to_utc(value, clock)` using python-dateutil for parsing/normalization
-- [ ] T024 [P] [US1] Create `src/iot_ingestion/infrastructure/models.py`: Peewee `SensorReadingModel` mapping `sensor_readings` (incl. autoincrement `id`, `alert_led_state`, `forwarded_at` nullable)
-- [ ] T025 [US1] Create `src/iot_ingestion/application/ports.py`: `ReadingRepository` and `UpstreamForwarder` protocols (DI seams)
-- [ ] T026 [US1] Create `src/iot_ingestion/infrastructure/reading_repository.py`: `add(reading) -> reading_id` and helpers, mapping model ↔ entity (depends on T024, T025)
-- [ ] T027 [US1] Create `src/iot_ingestion/application/ingest_reading.py`: orchestrate normalize → evaluate `alert_led_state` → persist → return result; forwarding is a no-op stub at this stage (depends on T021–T026)
-- [ ] T028 [US1] Create `src/iot_ingestion/interfaces/routes.py`: `POST /api/v1/iot-monitoring/sensor-readings` reading the auth context, invoking the use case, and returning `201`; register the blueprint in `src/app.py` (depends on T027, T017)
+- [X] T021 [P] [US1] Create `src/iot_ingestion/domain/sensor_reading.py`: pure `SensorReading` entity (`temperature`, `humidity`, `occupancy`, `recorded_at` UTC)
+- [X] T022 [P] [US1] Create `src/iot_ingestion/domain/alert_policy.py`: pure `evaluate(reading, thresholds) -> int` returning 0/1 (occupancy ignored)
+- [X] T023 [P] [US1] Create `src/iot_ingestion/application/normalize.py`: `to_utc(value, clock)` using python-dateutil for parsing/normalization
+- [X] T024 [P] [US1] Create `src/iot_ingestion/infrastructure/models.py`: Peewee `SensorReadingModel` mapping `sensor_readings` (incl. autoincrement `id`, `alert_led_state`, `forwarded_at` nullable)
+- [X] T025 [US1] Create `src/iot_ingestion/application/ports.py`: `ReadingRepository` and `UpstreamForwarder` protocols (DI seams)
+- [X] T026 [US1] Create `src/iot_ingestion/infrastructure/reading_repository.py`: `add(reading) -> reading_id` and helpers, mapping model ↔ entity (depends on T024, T025)
+- [X] T027 [US1] Create `src/iot_ingestion/application/ingest_reading.py`: orchestrate normalize → evaluate `alert_led_state` → persist → return result; forwarding is a no-op stub at this stage (depends on T021–T026)
+- [X] T028 [US1] Create `src/iot_ingestion/interfaces/routes.py`: `POST /api/v1/iot-monitoring/sensor-readings` reading the auth context, invoking the use case, and returning `201`; register the blueprint in `src/app.py` (depends on T027, T017)
 
 **Checkpoint**: MVP — a valid device gets a correct, cloud-independent alert decision and the reading is durably stored.
 
@@ -106,16 +106,16 @@ Confirm no rows are written in any case.
 
 ### Tests for User Story 2 (write first; must fail) ⚠️
 
-- [ ] T029 [P] [US2] Unit test request validator in `tests/unit/iot_ingestion/test_request_validator.py`: missing fields, wrong types, temperature/humidity out of range → validation error
-- [ ] T030 [P] [US2] Integration test auth failures in `tests/integration/test_auth_failures.py`: missing key, unknown `device_id`, wrong key → identical generic `401 {code: AUTH_FAILED}`; nothing persisted
-- [ ] T031 [P] [US2] Integration test validation errors in `tests/integration/test_validation_errors.py`: bad body → `400 {code: VALIDATION_ERROR}`; nothing persisted
+- [X] T029 [P] [US2] Unit test request validator in `tests/unit/iot_ingestion/test_request_validator.py`: missing fields, wrong types, temperature/humidity out of range → validation error
+- [X] T030 [P] [US2] Integration test auth failures in `tests/integration/test_auth_failures.py`: missing key, unknown `device_id`, wrong key → identical generic `401 {code: AUTH_FAILED}`; nothing persisted
+- [X] T031 [P] [US2] Integration test validation errors in `tests/integration/test_validation_errors.py`: bad body → `400 {code: VALIDATION_ERROR}`; nothing persisted
 
 ### Implementation for User Story 2
 
-- [ ] T032 [P] [US2] Create `src/iot_ingestion/application/validation.py`: `validate_reading_request(body)` enforcing required fields, types, and ranges (temp −40..85 °C, humidity 0..100 %), raising structured validation errors
-- [ ] T033 [US2] Register Flask error handlers in `src/app.py` mapping validation errors → `400` and auth errors → `401`, each rendering `{code, message}` via `src/shared/errors.py`
-- [ ] T034 [US2] Harden `src/device_auth/interfaces/middleware.py`: return one generic `401` for missing/unknown/invalid credentials while logging the specific reason server-side (FR-003b)
-- [ ] T035 [US2] Update `src/iot_ingestion/interfaces/routes.py` to run `validate_reading_request` before any persistence so rejected requests write nothing (depends on T032)
+- [X] T032 [P] [US2] Create `src/iot_ingestion/application/validation.py`: `validate_reading_request(body)` enforcing required fields, types, and ranges (temp −40..85 °C, humidity 0..100 %), raising structured validation errors
+- [X] T033 [US2] Register Flask error handlers in `src/app.py` mapping validation errors → `400` and auth errors → `401`, each rendering `{code, message}` via `src/shared/errors.py`
+- [X] T034 [US2] Harden `src/device_auth/interfaces/middleware.py`: return one generic `401` for missing/unknown/invalid credentials while logging the specific reason server-side (FR-003b)
+- [X] T035 [US2] Update `src/iot_ingestion/interfaces/routes.py` to run `validate_reading_request` before any persistence so rejected requests write nothing (depends on T032)
 
 **Checkpoint**: Security and input gates enforced; US1 still passes.
 
@@ -133,17 +133,17 @@ forwards buffered rows and stamps `forwarded_at`, with no duplicate delivery.
 
 ### Tests for User Story 3 (write first; must fail) ⚠️
 
-- [ ] T036 [P] [US3] Unit test upstream forwarder in `tests/unit/iot_ingestion/test_upstream_forwarder.py`: timeout/connection errors are caught and reported as failure (never propagate to caller); payload includes `reading_id`
-- [ ] T037 [P] [US3] Integration test offline buffering in `tests/integration/test_offline_buffering.py`: upstream unreachable → `201` and `forwarded_at IS NULL`
-- [ ] T038 [P] [US3] Integration test retry in `tests/integration/test_retry_forwarding.py`: buffered rows forwarded on next run, `forwarded_at` set, same `reading_id` reused (dedup), no duplicate sends
+- [X] T036 [P] [US3] Unit test upstream forwarder in `tests/unit/iot_ingestion/test_upstream_forwarder.py`: timeout/connection errors are caught and reported as failure (never propagate to caller); payload includes `reading_id`
+- [X] T037 [P] [US3] Integration test offline buffering in `tests/integration/test_offline_buffering.py`: upstream unreachable → `201` and `forwarded_at IS NULL`
+- [X] T038 [P] [US3] Integration test retry in `tests/integration/test_retry_forwarding.py`: buffered rows forwarded on next run, `forwarded_at` set, same `reading_id` reused (dedup), no duplicate sends
 
 ### Implementation for User Story 3
 
-- [ ] T039 [P] [US3] Create `src/iot_ingestion/infrastructure/upstream_forwarder.py`: `requests`-based client posting to `EDUSPACE_WEB_API_URL` with configurable timeout, sending `reading_id`; returns success/failure without raising
-- [ ] T040 [US3] Update `src/iot_ingestion/application/ingest_reading.py` to forward best-effort after persistence: on success set `forwarded_at`; on failure log and leave `NULL`; never alter the device response (depends on T039)
-- [ ] T041 [US3] Add `mark_forwarded(reading_id, ts)` and `iter_unforwarded()` to `src/iot_ingestion/infrastructure/reading_repository.py`
-- [ ] T042 [US3] Create `src/iot_ingestion/infrastructure/retry_task.py`: periodically re-forward rows where `forwarded_at IS NULL` and stamp `forwarded_at` on success (depends on T039, T041)
-- [ ] T043 [US3] Wire the retry task to start with the app in `src/app.py` (depends on T042)
+- [X] T039 [P] [US3] Create `src/iot_ingestion/infrastructure/upstream_forwarder.py`: `requests`-based client posting to `EDUSPACE_WEB_API_URL` with configurable timeout, sending `reading_id`; returns success/failure without raising
+- [X] T040 [US3] Update `src/iot_ingestion/application/ingest_reading.py` to forward best-effort after persistence: on success set `forwarded_at`; on failure log and leave `NULL`; never alter the device response (depends on T039)
+- [X] T041 [US3] Add `mark_forwarded(reading_id, ts)` and `iter_unforwarded()` to `src/iot_ingestion/infrastructure/reading_repository.py`
+- [X] T042 [US3] Create `src/iot_ingestion/infrastructure/retry_task.py`: periodically re-forward rows where `forwarded_at IS NULL` and stamp `forwarded_at` on success (depends on T039, T041)
+- [X] T043 [US3] Wire the retry task to start with the app in `src/app.py` (depends on T042)
 
 **Checkpoint**: Zero data loss across outages; forwarding failures never reach the device.
 
@@ -159,12 +159,12 @@ and evaluated. Restart → the device is not duplicated.
 
 ### Tests for User Story 4 (write first; must fail) ⚠️
 
-- [ ] T044 [P] [US4] Integration test seeding in `tests/integration/test_seed_test_device.py`: fresh dev start creates the test device and it authenticates; second startup does not duplicate it
+- [X] T044 [P] [US4] Integration test seeding in `tests/integration/test_seed_test_device.py`: fresh dev start creates the test device and it authenticates; second startup does not duplicate it
 
 ### Implementation for User Story 4
 
-- [ ] T045 [US4] Create `src/device_auth/application/seed_test_device.py`: idempotent use case that creates the default test device (hashing its key) only when `EDUSPACE_ENV=development` and it is absent
-- [ ] T046 [US4] Wire seeding into the `before_request` bootstrap in `src/app.py`, gated by development mode and run-once (depends on T045)
+- [X] T045 [US4] Create `src/device_auth/application/seed_test_device.py`: idempotent use case that creates the default test device (hashing its key) only when `EDUSPACE_ENV=development` and it is absent
+- [X] T046 [US4] Wire seeding into the `before_request` bootstrap in `src/app.py`, gated by development mode and run-once (depends on T045)
 
 **Checkpoint**: Zero-setup local development per quickstart.md.
 
@@ -174,10 +174,10 @@ and evaluated. Restart → the device is not duplicated.
 
 **Purpose**: Contract conformance, documentation, and constitution compliance sweep.
 
-- [ ] T047 [P] Contract test in `tests/contract/test_sensor_readings_contract.py`: request/response shapes and status codes match `contracts/sensor-readings.openapi.yaml`
-- [ ] T048 [P] Validate `quickstart.md` end-to-end against the running service (happy path, 401, 400, offline buffering, restart durability) and confirm unattended operation (FR-016): the service accepts scheduled readings and the background retry task runs with no human intervention
-- [ ] T049 [P] Constitution compliance sweep: confirm every function ≤ 30 lines, type hints on all signatures, dependencies injected, and all I/O confined to infrastructure
-- [ ] T050 Finalize `requirements.txt` version pins and a short run/test section in `README.md`
+- [X] T047 [P] Contract test in `tests/contract/test_sensor_readings_contract.py`: request/response shapes and status codes match `contracts/sensor-readings.openapi.yaml`
+- [X] T048 [P] Validate `quickstart.md` end-to-end against the running service (happy path, 401, 400, offline buffering, restart durability) and confirm unattended operation (FR-016): the service accepts scheduled readings and the background retry task runs with no human intervention
+- [X] T049 [P] Constitution compliance sweep: confirm every function ≤ 30 lines, type hints on all signatures, dependencies injected, and all I/O confined to infrastructure
+- [X] T050 Finalize `requirements.txt` version pins and a short run/test section in `README.md`
 
 ---
 
