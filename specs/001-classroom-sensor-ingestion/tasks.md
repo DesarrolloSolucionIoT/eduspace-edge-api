@@ -175,7 +175,7 @@ and evaluated. Restart → the device is not duplicated.
 **Purpose**: Contract conformance, documentation, and constitution compliance sweep.
 
 - [ ] T047 [P] Contract test in `tests/contract/test_sensor_readings_contract.py`: request/response shapes and status codes match `contracts/sensor-readings.openapi.yaml`
-- [ ] T048 [P] Validate `quickstart.md` end-to-end against the running service (happy path, 401, 400, offline buffering, restart durability)
+- [ ] T048 [P] Validate `quickstart.md` end-to-end against the running service (happy path, 401, 400, offline buffering, restart durability) and confirm unattended operation (FR-016): the service accepts scheduled readings and the background retry task runs with no human intervention
 - [ ] T049 [P] Constitution compliance sweep: confirm every function ≤ 30 lines, type hints on all signatures, dependencies injected, and all I/O confined to infrastructure
 - [ ] T050 Finalize `requirements.txt` version pins and a short run/test section in `README.md`
 

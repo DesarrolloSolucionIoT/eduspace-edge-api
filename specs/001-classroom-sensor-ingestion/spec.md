@@ -17,6 +17,8 @@
 - Q: What is the local buffer retention policy during a cloud outage? → A: Unbounded — retain all unforwarded readings until delivery succeeds; never drop (prioritize zero data loss).
 - Q: How are device API keys stored at rest in the local registry? → A: Store only a salted hash of the API key and validate by hashing the presented key and comparing; never store plaintext.
 - Q: Do authentication-failure responses distinguish missing vs unknown-device vs wrong-key? → A: No — return one generic auth-failure code/message to the device for all three cases, but log the specific reason server-side for diagnostics.
+- Q: Should the device be able to distinguish a cloud-unavailability error? → A: No — forwarding is asynchronous, so cloud-unavailability is never surfaced to the device; device-facing errors are only authentication (401) and validation (400). 503 is reserved by the constitution for synchronous upstream paths and is not emitted here.
+- Q: Are per-zone thresholds persisted or configuration-sourced? → A: Configuration-sourced, keyed by zone identifier (no zone table in this iteration); each Device records its zone identifier. A persisted zone store is a future additive change.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -194,9 +196,13 @@ accepted and evaluated.
   backend can deduplicate readings delivered more than once during retries.
 - **FR-012**: The service MUST normalize device-supplied timestamps to UTC before persisting
   a reading.
-- **FR-013**: Every error response MUST include both a machine-readable code and a
-  human-readable message, and MUST distinguish authentication failures, validation errors,
-  and cloud-unavailability conditions from one another.
+- **FR-013**: Every error response returned to a device MUST include both a machine-readable
+  code and a human-readable message, and MUST distinguish authentication failures from
+  validation errors. Cloud-unavailability is NOT surfaced to the device on the reading-
+  submission path: because forwarding is asynchronous (FR-009, FR-011), an unreachable cloud
+  never produces a device-facing error. The machine-readable code reserved for synchronous
+  upstream-unavailability conditions (HTTP 503) is defined by the constitution but is not
+  emitted by this endpoint.
 - **FR-014**: The service MUST automatically provision a known default test device in local
   development/testing contexts, without duplicating it on restart, and MUST NOT rely on that
   device for production operation.
@@ -210,9 +216,11 @@ accepted and evaluated.
 - **Device**: A registered classroom monitoring unit. Identified by a device identifier and
   authenticated by a secret API key stored only as a salted hash. Associated with exactly one
   classroom zone.
-- **Classroom Zone**: A monitored space with a configured set of environmental thresholds
-  (e.g., acceptable temperature and humidity bounds) used to evaluate readings from its
-  device(s).
+- **Classroom Zone**: A monitored space identified by a zone identifier, with a configured set
+  of environmental thresholds (e.g., acceptable temperature and humidity bounds) used to
+  evaluate readings from its device(s). In this iteration a zone is a **configuration-sourced**
+  concept keyed by zone identifier — not a persisted table; each Device records the zone
+  identifier it belongs to.
 - **Sensor Reading**: A single measurement event containing temperature, relative humidity,
   binary occupancy state, the submitting device, and a timestamp normalized to UTC. Carries a
   service-assigned stable unique identifier used for forwarding deduplication.
@@ -240,8 +248,10 @@ accepted and evaluated.
 - **SC-006**: A developer can submit a successful reading against a freshly started local
   service using only documented default credentials, with zero manual setup steps.
 - **SC-007**: Every error returned to a device carries a distinct machine-readable code and a
-  human-readable message, enabling the device to react differently to authentication,
-  validation, and cloud-unavailability conditions.
+  human-readable message, enabling the device to react differently to authentication versus
+  validation failures. Cloud-unavailability is never returned as a device-facing error on the
+  reading-submission path (readings are buffered and retried), so the device does not need to
+  handle it.
 
 ## Assumptions
 
@@ -260,6 +270,17 @@ accepted and evaluated.
   default test device is provisioned only in that context.
 - Backward compatibility of the versioned API contract means a device built against a given
   contract version continues to function after service updates within that version.
+- Accepted value ranges for validation are: temperature −40.0 to 85.0 °C (typical sensor
+  operating range) and relative humidity 0.0 to 100.0 %. Values outside these ranges, missing
+  values, or wrong types are validation errors.
+- Per-zone thresholds are configuration-sourced and keyed by zone identifier (no zone table in
+  this iteration); moving thresholds into a persisted store is a future, additive change.
+- Terminology: the device-facing "alert indicator" / "warning LED" corresponds to the
+  `alert_led_state` field in the API contract (1 = active, 0 = inactive).
+- Constitution alignment: the constitution reserves HTTP 503 for synchronous upstream-
+  unavailability conditions; this feature has no synchronous upstream dependency on the request
+  path, so 503 is intentionally never emitted, and forwarding failures never produce a 5xx
+  (they are buffered and retried).
 
 ## Dependencies
 
