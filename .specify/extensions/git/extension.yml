@@ -85,32 +85,32 @@ hooks:
     description: "Auto-commit before tasks-to-issues conversion"
   after_constitution:
     command: speckit.git.commit
-    optional: true
+    optional: false
     prompt: "Commit constitution changes?"
     description: "Auto-commit after constitution update"
   after_specify:
     command: speckit.git.commit
-    optional: true
+    optional: false
     prompt: "Commit specification changes?"
     description: "Auto-commit after specification"
   after_clarify:
     command: speckit.git.commit
-    optional: true
+    optional: false
     prompt: "Commit clarification changes?"
     description: "Auto-commit after spec clarification"
   after_plan:
     command: speckit.git.commit
-    optional: true
+    optional: false
     prompt: "Commit plan changes?"
     description: "Auto-commit after implementation planning"
   after_tasks:
     command: speckit.git.commit
-    optional: true
+    optional: false
     prompt: "Commit task changes?"
     description: "Auto-commit after task generation"
   after_implement:
     command: speckit.git.commit
-    optional: true
+    optional: false
     prompt: "Commit implementation changes?"
     description: "Auto-commit after implementation"
   after_checklist:
@@ -120,7 +120,7 @@ hooks:
     description: "Auto-commit after checklist generation"
   after_analyze:
     command: speckit.git.commit
-    optional: true
+    optional: false
     prompt: "Commit analysis results?"
     description: "Auto-commit after analysis"
   after_taskstoissues:
