@@ -1,0 +1,119 @@
+openapi: 3.0.3
+info:
+  title: EduSpace Edge API — Sensor Ingestion
+  version: "1.0.0"
+  description: >
+    Edge service contract for classroom sensor ingestion. The API is versioned in the path
+    (`/api/v1`) so device firmware and server-side ingestion remain compatible across updates
+    (FR-015). The alert decision is computed locally and is independent of cloud availability.
+servers:
+  - url: /api/v1/iot-monitoring
+    description: Versioned edge ingestion base path
+paths:
+  /sensor-readings:
+    post:
+      operationId: submitSensorReading
+      summary: Submit a sensor reading and receive the local alert-LED decision
+      description: >
+        Authenticates the device via X-API-Key against the body device_id, validates the
+        reading, normalizes recorded_at to UTC, persists it locally, computes alert_led_state
+        from the device's zone thresholds, and asynchronously forwards the reading upstream.
+        Upstream availability never affects this response.
+      parameters:
+        - in: header
+          name: X-API-Key
+          required: true
+          schema:
+            type: string
+          description: Device secret API key. Validated (as a salted hash) against device_id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SensorReadingRequest"
+      responses:
+        "201":
+          description: Reading accepted, persisted, and evaluated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SensorReadingResponse"
+        "400":
+          description: Validation error (missing/malformed/out-of-range fields).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: VALIDATION_ERROR
+                message: "humidity must be between 0 and 100"
+        "401":
+          description: >
+            Authentication failure. A single generic response is returned for missing
+            credentials, unknown device, or invalid key (no enumeration); the specific reason
+            is logged server-side.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: AUTH_FAILED
+                message: "Authentication failed"
+components:
+  schemas:
+    SensorReadingRequest:
+      type: object
+      required: [device_id, temperature, humidity, occupancy]
+      properties:
+        device_id:
+          type: string
+          example: esp32-aula-101
+        temperature:
+          type: number
+          format: float
+          description: Degrees Celsius
+          example: 23.4
+        humidity:
+          type: number
+          format: float
+          description: Relative humidity percent (0–100)
+          example: 48.2
+        occupancy:
+          type: boolean
+          description: Binary occupancy state; recorded but does not affect alert_led_state
+          example: true
+        recorded_at:
+          type: string
+          format: date-time
+          description: Optional ISO 8601 timestamp; normalized to UTC. Defaults to server UTC time if omitted.
+          example: "2026-05-30T14:03:22-05:00"
+    SensorReadingResponse:
+      type: object
+      required: [reading_id, alert_led_state, recorded_at]
+      properties:
+        reading_id:
+          type: integer
+          description: Stable unique reading identifier (also forwarded upstream for dedup)
+          example: 1024
+        alert_led_state:
+          type: integer
+          enum: [0, 1]
+          description: 1 if any measured value breached the zone thresholds, else 0
+          example: 1
+        recorded_at:
+          type: string
+          format: date-time
+          description: UTC-normalized ISO 8601 timestamp as persisted
+          example: "2026-05-30T19:03:22+00:00"
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code
+          enum: [VALIDATION_ERROR, AUTH_FAILED]
+        message:
+          type: string
+          description: Human-readable error message
