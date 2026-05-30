@@ -8,6 +8,16 @@
 
 **Input**: User description: "Build an IoT edge service for the EduSpace platform that sits between embedded classroom sensor devices and a cloud backend. It accepts periodic sensor readings (temperature, humidity, occupancy) from registered/authorized devices, evaluates environmental thresholds locally to tell the device whether its alert indicator should be active, persists readings locally for resilience, and forwards them asynchronously to the cloud — buffering when the cloud is unreachable. Devices authenticate with a device identifier and secret API key; a default test device is auto-provisioned for local development. The service runs unattended with a stable, versioned API contract."
 
+## Clarifications
+
+### Session 2026-05-30
+
+- Q: Does occupancy state affect the alert decision, or is it contextual-only? → A: Contextual-only — occupancy is recorded with each reading but does not affect the alert decision; only temperature/humidity thresholds drive it.
+- Q: How is a reading uniquely identified so the cloud can deduplicate across retries? → A: The service assigns each accepted reading a stable unique ID at ingestion and includes it on every forward attempt; the cloud deduplicates by that ID.
+- Q: What is the local buffer retention policy during a cloud outage? → A: Unbounded — retain all unforwarded readings until delivery succeeds; never drop (prioritize zero data loss).
+- Q: How are device API keys stored at rest in the local registry? → A: Store only a salted hash of the API key and validate by hashing the presented key and comparing; never store plaintext.
+- Q: Do authentication-failure responses distinguish missing vs unknown-device vs wrong-key? → A: No — return one generic auth-failure code/message to the device for all three cases, but log the specific reason server-side for diagnostics.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Submit a reading and receive a local alert decision (Priority: P1)
@@ -151,12 +161,20 @@ accepted and evaluated.
 - **FR-003**: The service MUST reject any request that omits credentials, presents an
   unregistered device identifier, or presents a key that does not match the registered
   device, treating each as an authentication failure.
+- **FR-003a**: The service MUST store device API keys only as salted hashes and MUST validate
+  a request by hashing the presented key and comparing; plaintext API keys MUST NOT be
+  persisted.
+- **FR-003b**: The service MUST return a single generic authentication-failure response (same
+  machine-readable code and message) for missing credentials, unknown device identifier, and
+  invalid key, so device identifiers cannot be enumerated. The specific failure reason MUST be
+  logged server-side for diagnostics.
 - **FR-004**: The service MUST validate every authenticated reading and reject readings with
   missing required values or values outside accepted ranges, treating these as validation
   errors distinct from authentication failures.
-- **FR-005**: For each valid reading, the service MUST evaluate the measured values against
-  the environmental thresholds configured for the device's classroom zone and determine
-  whether the device's alert indicator should be active or inactive.
+- **FR-005**: For each valid reading, the service MUST evaluate the temperature and humidity
+  values against the environmental thresholds configured for the device's classroom zone and
+  determine whether the device's alert indicator should be active or inactive. Occupancy state
+  MUST NOT influence this decision.
 - **FR-006**: The service MUST compute the alert-indicator decision locally and MUST NOT
   require communication with the cloud backend or any external system to produce it.
 - **FR-007**: The service MUST return the alert-indicator decision to the device in the
@@ -167,9 +185,13 @@ accepted and evaluated.
   without blocking the device's response on the outcome of forwarding.
 - **FR-010**: When the cloud backend is unreachable, the service MUST retain accepted
   readings locally and forward them automatically once the backend becomes reachable again,
-  without losing readings.
+  without losing readings. Retention is unbounded: unforwarded readings MUST be kept until
+  delivery succeeds and MUST NOT be dropped to reclaim space.
 - **FR-011**: The service MUST log forwarding failures and queue them for retry, and MUST
   NOT surface a forwarding failure as a server error to the device.
+- **FR-011a**: The service MUST assign each accepted reading a stable unique identifier at
+  ingestion and include that identifier on every forwarding attempt, so that the cloud
+  backend can deduplicate readings delivered more than once during retries.
 - **FR-012**: The service MUST normalize device-supplied timestamps to UTC before persisting
   a reading.
 - **FR-013**: Every error response MUST include both a machine-readable code and a
@@ -186,12 +208,14 @@ accepted and evaluated.
 ### Key Entities *(include if feature involves data)*
 
 - **Device**: A registered classroom monitoring unit. Identified by a device identifier and
-  authenticated by a secret API key. Associated with exactly one classroom zone.
+  authenticated by a secret API key stored only as a salted hash. Associated with exactly one
+  classroom zone.
 - **Classroom Zone**: A monitored space with a configured set of environmental thresholds
   (e.g., acceptable temperature and humidity bounds) used to evaluate readings from its
   device(s).
 - **Sensor Reading**: A single measurement event containing temperature, relative humidity,
-  binary occupancy state, the submitting device, and a timestamp normalized to UTC.
+  binary occupancy state, the submitting device, and a timestamp normalized to UTC. Carries a
+  service-assigned stable unique identifier used for forwarding deduplication.
 - **Alert Evaluation Result**: The locally computed outcome for a reading, indicating whether
   the device's alert indicator should be active or inactive and which threshold(s), if any,
   were breached.
