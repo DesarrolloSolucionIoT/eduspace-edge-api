@@ -71,7 +71,9 @@ def _register_error_handlers(app: Flask) -> None:
 def _start_worker(settings: Settings) -> None:
     start_retry_worker(
         make_readings=ReadingRepository,
-        forwarder=UpstreamForwarder(settings.web_api_url, settings.forward_timeout),
+        forwarder=UpstreamForwarder(
+            settings.web_api_url, settings.forward_timeout, settings.forward_auth
+        ),
         clock=SystemClock(),
         interval=settings.retry_interval,
     )

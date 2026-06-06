@@ -20,6 +20,7 @@ def settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Settings:
     monkeypatch.setenv("EDUSPACE_WEB_API_URL", "http://upstream.test/ingest")
     monkeypatch.setenv("EDUSPACE_FORWARD_TIMEOUT", "1")
     monkeypatch.setenv("EDUSPACE_RETRY_INTERVAL", "0")  # disable background worker in tests
+    monkeypatch.setenv("EDUSPACE_FORWARD_AUTH", "edge-secret-test")
     from src.config import load_settings
 
     return load_settings()

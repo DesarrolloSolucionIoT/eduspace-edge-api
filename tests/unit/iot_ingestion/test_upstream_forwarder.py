@@ -9,7 +9,7 @@ import requests
 
 from src.iot_ingestion.domain.sensor_reading import SensorReading
 from src.iot_ingestion.infrastructure import upstream_forwarder as fwd_mod
-from src.iot_ingestion.infrastructure.upstream_forwarder import UpstreamForwarder
+from src.iot_ingestion.infrastructure.upstream_forwarder import EDGE_AUTH_HEADER, UpstreamForwarder
 
 
 def _reading() -> SensorReading:
@@ -48,13 +48,38 @@ def test_connection_error_is_caught(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_success_returns_true_and_sends_reading_id(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, Any] = {}
 
-    def _ok(url: str, json: dict[str, Any], timeout: float) -> _Resp:  # noqa: A002
+    def _ok(url: str, json: dict[str, Any], timeout: float, headers: dict[str, str]) -> _Resp:  # noqa: A002
         captured["json"] = json
         return _Resp(202)
 
     monkeypatch.setattr(fwd_mod.requests, "post", _ok)
     assert UpstreamForwarder("http://up/ingest", 1.0).forward(_reading()) is True
     assert captured["json"]["reading_id"] == 7
+
+
+def test_auth_token_sent_as_edge_key_header(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, Any] = {}
+
+    def _ok(url: str, json: dict[str, Any], timeout: float, headers: dict[str, str]) -> _Resp:  # noqa: A002
+        captured["headers"] = headers
+        return _Resp(200)
+
+    monkeypatch.setattr(fwd_mod.requests, "post", _ok)
+    forwarder = UpstreamForwarder("http://up/ingest", 1.0, "edge-secret")
+    assert forwarder.forward(_reading()) is True
+    assert captured["headers"][EDGE_AUTH_HEADER] == "edge-secret"
+
+
+def test_no_auth_header_when_token_empty(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, Any] = {}
+
+    def _ok(url: str, json: dict[str, Any], timeout: float, headers: dict[str, str]) -> _Resp:  # noqa: A002
+        captured["headers"] = headers
+        return _Resp(200)
+
+    monkeypatch.setattr(fwd_mod.requests, "post", _ok)
+    assert UpstreamForwarder("http://up/ingest", 1.0).forward(_reading()) is True
+    assert EDGE_AUTH_HEADER not in captured["headers"]
 
 
 def test_empty_base_url_is_noop_failure() -> None:

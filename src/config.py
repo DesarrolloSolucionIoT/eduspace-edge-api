@@ -14,6 +14,7 @@ class Settings:
     forward_timeout: float
     env: str
     retry_interval: float
+    forward_auth: str = ""
 
     @property
     def is_development(self) -> bool:
@@ -29,4 +30,5 @@ def load_settings() -> Settings:
         forward_timeout=float(os.environ.get("EDUSPACE_FORWARD_TIMEOUT", "5")),
         env=os.environ.get("EDUSPACE_ENV", "production"),
         retry_interval=float(os.environ.get("EDUSPACE_RETRY_INTERVAL", "30")),
+        forward_auth=os.environ.get("EDUSPACE_FORWARD_AUTH", ""),
     )

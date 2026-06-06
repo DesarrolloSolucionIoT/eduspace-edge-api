@@ -54,7 +54,8 @@ From the edge's [`UpstreamForwarder.forward`](../src/iot_ingestion/infrastructur
 - **Method:** `POST`
 - **URL:** the **full** value of the edge's `EDUSPACE_WEB_API_URL` env var, posted **as-is** (the
   edge does not append a path). The operator configures the complete URL of your endpoint there.
-- **Headers:** `Content-Type: application/json`. **No auth header is sent today** — see §8.
+- **Headers:** `Content-Type: application/json`, plus **`X-Edge-Key: <secret>`** when the edge is
+  configured with `EDUSPACE_FORWARD_AUTH` (empty by default → header omitted) — see §8.
 - **Timeout:** the edge waits `EDUSPACE_FORWARD_TIMEOUT` seconds (default **5s**). Respond well
   inside it or the edge treats it as a failure and retries later.
 - **Success = `2xx` only.** Any non-`2xx`, a timeout, or a connection error → the reading stays
@@ -130,7 +131,7 @@ Plus edits to two shared files: `Shared/.../Configuration/AppDbContext.cs` (enti
 - [ ] **Application** — `SensorReadingCommandService` with idempotent create (§5.4, §7).
 - [ ] **Infrastructure** — `SensorReadingRepository`, `AppDbContext` config with a **unique index** for idempotency, migration (§6.1).
 - [ ] **Interfaces/REST** — controller + resources + assemblers; bind snake_case JSON; map to `2xx` (§6.2–6.4).
-- [ ] **Auth** — the edge can't obtain a JWT; add an API-key header check, **not** `[Authorize]` (§8). *(Requires a small edge-side change to send the header.)*
+- [ ] **Auth** — the edge can't obtain a JWT; add an `X-Edge-Key` API-key header check, **not** `[Authorize]` (§8). *(Edge support is implemented — it sends `X-Edge-Key` when `EDUSPACE_FORWARD_AUTH` is set.)*
 - [ ] **DI** — register repository + services in `Program.cs` (§6.5).
 - [ ] **Idempotency** — return `2xx` for duplicates; never let a duplicate or a bad row trigger endless retries (§7).
 - [ ] **Config & tests** (§10, §11).
@@ -440,9 +441,12 @@ transit, so the edge believes it failed and retries). You **must** de-duplicate,
 
 ## 8. Authentication (edge → backend)
 
-**The edge sends no auth header today**, and it **cannot obtain a JWT** (it's an unattended device
-gateway, not a logged-in user). So the ingestion endpoint must **not** use the platform's `[Authorize]`
-JWT filter. Instead:
+The edge **cannot obtain a JWT** (it's an unattended device gateway, not a logged-in user), so the
+ingestion endpoint must **not** use the platform's `[Authorize]` JWT filter. Instead it authenticates
+with a shared-secret header: **the edge sends `X-Edge-Key: <secret>` whenever its
+`EDUSPACE_FORWARD_AUTH` env var is set** (implemented in
+[`upstream_forwarder.py`](../src/iot_ingestion/infrastructure/upstream_forwarder.py)). The backend
+must validate that header:
 
 1. **Add a shared-secret header check.** Define an action filter, e.g. `EdgeApiKeyFilter`, that
    compares a request header (`X-Edge-Key`) against a configured secret and returns `401` if it
@@ -463,15 +467,16 @@ JWT filter. Instead:
    }
    ```
 
-2. **Make the edge send the header.** This requires a small **edge-side change**: the forwarder
-   currently sets only `Content-Type`
-   ([`upstream_forwarder.py`](../src/iot_ingestion/infrastructure/upstream_forwarder.py#L25)). Add a
-   configurable header (e.g. an `EDUSPACE_FORWARD_AUTH` env var) injected into the `requests.post`
-   call. **Coordinate this change with the edge team** — until it's deployed, an API-key filter would
-   reject every forward (and, per §7, the edge would then retry forever).
+2. **Agree on the secret on both sides.** Set `EDUSPACE_FORWARD_AUTH` on the **edge** and the
+   matching `Edge:ApiKey` on the **backend** to the same value. The header name is fixed as
+   `X-Edge-Key` (`EDGE_AUTH_HEADER` in
+   [`upstream_forwarder.py`](../src/iot_ingestion/infrastructure/upstream_forwarder.py)).
+   > ⚠️ **Don't enable the backend filter before the edge has the secret set.** If the filter is on
+   > but the edge's `EDUSPACE_FORWARD_AUTH` is empty, the edge sends no header → `401` → and per §7 it
+   > **retries that reading forever**. Roll out the edge secret first, then turn on the filter.
 
-   Interim option with **no edge change**: restrict the endpoint at the network layer (reverse-proxy
-   IP allow-list / VPN / mTLS).
+   Network-level hardening (reverse-proxy IP allow-list / VPN / mTLS) is still recommended in addition
+   to the shared secret.
 
 > Note: `device_id` arrives in the body but is **not** an auth credential — the edge already
 > authenticated the device. Don't treat the body `device_id` as proof of identity.
@@ -499,7 +504,7 @@ Set on the **edge** (see [edge README](../README.md)); agree on URL + secret wit
 | `EDUSPACE_WEB_API_URL`     | **Full URL** of your controller, e.g. `https://api.eduspace…/api/v1/iot-monitoring/sensor-readings`. Empty = forwarding off. |
 | `EDUSPACE_FORWARD_TIMEOUT` | Seconds the edge waits for your `2xx` (default `5`). Stay under it. |
 | `EDUSPACE_RETRY_INTERVAL`  | Seconds between buffer-drain retries (default `30`).               |
-| `EDUSPACE_FORWARD_AUTH`*   | *(after the §8 edge change)* the `X-Edge-Key` secret value.        |
+| `EDUSPACE_FORWARD_AUTH`    | Secret sent as the `X-Edge-Key` header (§8). Empty = no header. Must match the backend's `Edge:ApiKey`. |
 
 On the **backend**, add `Edge:ApiKey` to configuration (`.env` / `appsettings`) matching that secret.
 

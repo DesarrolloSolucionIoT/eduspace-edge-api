@@ -28,6 +28,7 @@ the test suite).
 | `EDUSPACE_DB_PATH`     | SQLite file path (durable, not in-memory)        | `./eduspace-edge.db`                    |
 | `EDUSPACE_ENV`         | `development` enables test-device seeding        | `development`                          |
 | `EDUSPACE_FORWARD_TIMEOUT` | Upstream request timeout (seconds)           | `5`                                    |
+| `EDUSPACE_FORWARD_AUTH` | Shared secret sent upstream as `X-Edge-Key` header | `edge-secret`                      |
 
 ```bash
 # PowerShell

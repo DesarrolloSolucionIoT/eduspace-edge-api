@@ -36,6 +36,7 @@ pip install -r requirements.txt
 | `EDUSPACE_DB_PATH`         | SQLite file path (durable, not in-memory)    | `eduspace-edge.db` |
 | `EDUSPACE_WEB_API_URL`     | Upstream cloud Web API URL for forwarding    | _(empty)_          |
 | `EDUSPACE_FORWARD_TIMEOUT` | Upstream request timeout (seconds)           | `5`                |
+| `EDUSPACE_FORWARD_AUTH`    | Shared secret sent to upstream as `X-Edge-Key` (empty = no auth header) | _(empty)_ |
 | `EDUSPACE_ENV`             | `development` enables test-device seeding    | `production`       |
 | `EDUSPACE_RETRY_INTERVAL`  | Background retry interval (seconds; 0=off)   | `30`               |
 

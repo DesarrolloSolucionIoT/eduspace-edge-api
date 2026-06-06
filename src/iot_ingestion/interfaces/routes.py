@@ -40,5 +40,7 @@ def build_ingestion_blueprint(settings: Settings) -> Blueprint:
 
 
 def _build_use_case(settings: Settings) -> IngestReading:
-    forwarder = UpstreamForwarder(settings.web_api_url, settings.forward_timeout)
+    forwarder = UpstreamForwarder(
+        settings.web_api_url, settings.forward_timeout, settings.forward_auth
+    )
     return IngestReading(ReadingRepository(), forwarder, SystemClock())

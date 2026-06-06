@@ -24,7 +24,7 @@ class _Resp:
 
 
 def _forwarder(settings: Settings) -> UpstreamForwarder:
-    return UpstreamForwarder(settings.web_api_url, settings.forward_timeout)
+    return UpstreamForwarder(settings.web_api_url, settings.forward_timeout, settings.forward_auth)
 
 
 def test_buffered_reading_forwarded_on_retry(
@@ -40,7 +40,7 @@ def test_buffered_reading_forwarded_on_retry(
     # Upstream restored -> retry forwards and stamps forwarded_at.
     sent: list[dict[str, Any]] = []
 
-    def _ok(url: str, json: dict[str, Any], timeout: float) -> _Resp:  # noqa: A002
+    def _ok(url: str, json: dict[str, Any], timeout: float, headers: dict[str, str]) -> _Resp:  # noqa: A002
         sent.append(json)
         return _Resp()
 
@@ -57,7 +57,7 @@ def test_retry_is_idempotent_no_duplicate_delivery(
 ) -> None:
     sent: list[dict[str, Any]] = []
 
-    def _ok(url: str, json: dict[str, Any], timeout: float) -> _Resp:  # noqa: A002
+    def _ok(url: str, json: dict[str, Any], timeout: float, headers: dict[str, str]) -> _Resp:  # noqa: A002
         sent.append(json)
         return _Resp()
 
