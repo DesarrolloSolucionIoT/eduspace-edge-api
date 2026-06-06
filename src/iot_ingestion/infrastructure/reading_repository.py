@@ -17,6 +17,7 @@ class ReadingRepository:
         """Insert a reading and return its assigned id."""
         row = SensorReadingModel.create(
             device_id=reading.device_id,
+            zone_id=reading.zone_id,
             temperature=reading.temperature,
             humidity=reading.humidity,
             occupancy=int(reading.occupancy),
@@ -45,6 +46,7 @@ class ReadingRepository:
     def _to_entity(row: SensorReadingModel) -> SensorReading:
         return SensorReading(
             device_id=row.device_id,
+            zone_id=row.zone_id,
             temperature=row.temperature,
             humidity=row.humidity,
             occupancy=bool(row.occupancy),

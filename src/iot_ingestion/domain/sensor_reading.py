@@ -18,5 +18,6 @@ class SensorReading:
     humidity: float
     occupancy: bool
     recorded_at: datetime
+    zone_id: str = ""
     alert_led_state: int | None = None
     reading_id: int | None = None

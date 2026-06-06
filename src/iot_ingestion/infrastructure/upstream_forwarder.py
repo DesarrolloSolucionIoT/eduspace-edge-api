@@ -35,6 +35,7 @@ class UpstreamForwarder:
         return {
             "reading_id": reading.reading_id,
             "device_id": reading.device_id,
+            "zone_id": reading.zone_id,
             "temperature": reading.temperature,
             "humidity": reading.humidity,
             "occupancy": reading.occupancy,

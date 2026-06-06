@@ -18,6 +18,7 @@ class SensorReadingModel(Model):
 
     id = AutoField()
     device_id = CharField(index=True)  # logical FK to devices.device_id
+    zone_id = CharField(default="")
     temperature = FloatField()
     humidity = FloatField()
     occupancy = IntegerField()  # stored as 0/1

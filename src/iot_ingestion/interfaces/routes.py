@@ -22,6 +22,7 @@ def build_ingestion_blueprint(settings: Settings) -> Blueprint:
         validated = validate_reading_request(request.get_json(silent=True))
         command = IngestCommand(
             device_id=g.auth.device.device_id,
+            zone_id=g.auth.device.zone_id,
             temperature=validated.temperature,
             humidity=validated.humidity,
             occupancy=validated.occupancy,

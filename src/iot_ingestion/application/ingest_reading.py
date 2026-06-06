@@ -20,6 +20,7 @@ class IngestCommand:
     """Validated inputs for ingesting one reading."""
 
     device_id: str
+    zone_id: str
     temperature: float
     humidity: float
     occupancy: bool
@@ -52,6 +53,7 @@ class IngestReading:
         alert = evaluate(command.temperature, command.humidity, command.thresholds)
         reading = SensorReading(
             device_id=command.device_id,
+            zone_id=command.zone_id,
             temperature=command.temperature,
             humidity=command.humidity,
             occupancy=command.occupancy,
