@@ -1,0 +1,210 @@
+{
+  "info": {
+    "name": "EduSpace Edge API",
+    "description": "Classroom sensor ingestion & local alerting edge service. Start the server in development mode (`$env:EDUSPACE_ENV=\"development\"; flask --app src.app run`) so the test device is seeded on first request.\n\nTest device: device_id `esp32-aula-101`, X-API-Key `test-api-key-edu`, zone `aula-101`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "apiKey",
+      "value": "test-api-key-edu",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Submit reading (201 Created)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-API-Key", "value": "{{apiKey}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"device_id\": \"esp32-aula-101\",\n  \"temperature\": 31.5,\n  \"humidity\": 70.0,\n  \"occupancy\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/iot-monitoring/sensor-readings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "iot-monitoring", "sensor-readings"]
+        },
+        "description": "Happy path. Returns 201 with {reading_id, alert_led_state, recorded_at}. `recorded_at` is optional in the body; omit it to let the server timestamp the reading."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', () => pm.response.to.have.status(201));",
+              "const b = pm.response.json();",
+              "pm.test('has reading_id', () => pm.expect(b).to.have.property('reading_id'));",
+              "pm.test('has alert_led_state', () => pm.expect(b).to.have.property('alert_led_state'));",
+              "pm.test('has recorded_at', () => pm.expect(b).to.have.property('recorded_at'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Submit reading with explicit recorded_at (201)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-API-Key", "value": "{{apiKey}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"device_id\": \"esp32-aula-101\",\n  \"temperature\": 22.0,\n  \"humidity\": 45.0,\n  \"occupancy\": false,\n  \"recorded_at\": \"2026-06-06T14:30:00Z\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/iot-monitoring/sensor-readings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "iot-monitoring", "sensor-readings"]
+        },
+        "description": "Client-supplied ISO 8601 timestamp. The server normalizes it to UTC and echoes it back in recorded_at."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', () => pm.response.to.have.status(201));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Validation error (400) - temperature out of range",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-API-Key", "value": "{{apiKey}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"device_id\": \"esp32-aula-101\",\n  \"temperature\": 999,\n  \"humidity\": 70.0,\n  \"occupancy\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/iot-monitoring/sensor-readings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "iot-monitoring", "sensor-readings"]
+        },
+        "description": "temperature must be between -40 and 85; humidity between 0 and 100; occupancy must be a boolean. This sends temperature=999 and expects 400."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Validation error (400) - missing field",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-API-Key", "value": "{{apiKey}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"device_id\": \"esp32-aula-101\",\n  \"temperature\": 25.0\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/iot-monitoring/sensor-readings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "iot-monitoring", "sensor-readings"]
+        },
+        "description": "Missing required humidity and occupancy fields. Expects 400."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth failure (401) - wrong API key",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-API-Key", "value": "wrong-key" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"device_id\": \"esp32-aula-101\",\n  \"temperature\": 25.0,\n  \"humidity\": 50.0,\n  \"occupancy\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/iot-monitoring/sensor-readings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "iot-monitoring", "sensor-readings"]
+        },
+        "description": "Invalid X-API-Key. Returns a generic 401 (no detail leaked)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 401', () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth failure (401) - missing API key",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"device_id\": \"esp32-aula-101\",\n  \"temperature\": 25.0,\n  \"humidity\": 50.0,\n  \"occupancy\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/iot-monitoring/sensor-readings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "iot-monitoring", "sensor-readings"]
+        },
+        "description": "No X-API-Key header at all. Returns 401."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 401', () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
