@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "author": "EduSolutions",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-devkit-v1",
+      "id": "esp32",
+      "top": 200,
+      "left": 200,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht22",
+      "top": 0,
+      "left": 500,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-pir-motion-sensor",
+      "id": "pir",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-rgb-led",
+      "id": "rgb",
+      "top": 500,
+      "left": 300,
+      "attrs": { "common": "cathode" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rR",
+      "top": 430,
+      "left": 200,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rG",
+      "top": 430,
+      "left": 300,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rB",
+      "top": 430,
+      "left": 400,
+      "attrs": { "value": "220" }
+    }
+  ],
+  "connections": [
+    ["esp32:TX0", "$serialMonitor:RX", "", []],
+    ["esp32:RX0", "$serialMonitor:TX", "", []],
+    ["dht22:VCC", "esp32:3V3", "red", []],
+    ["dht22:GND", "esp32:GND.1", "black", []],
+    ["dht22:SDA", "esp32:D4", "green", []],
+    ["pir:VCC", "esp32:VIN", "red", []],
+    ["pir:GND", "esp32:GND.2", "black", []],
+    ["pir:OUT", "esp32:D14", "yellow", []],
+    ["esp32:D25", "rR:1", "red", []],
+    ["rR:2", "rgb:R", "red", []],
+    ["esp32:D26", "rG:1", "green", []],
+    ["rG:2", "rgb:G", "green", []],
+    ["esp32:D27", "rB:1", "blue", []],
+    ["rB:2", "rgb:B", "blue", []],
+    ["rgb:COM", "esp32:GND.3", "black", []]
+  ],
+  "serialMonitor": {
+    "display": "always"
+  }
+}
